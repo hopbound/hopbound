@@ -56,7 +56,7 @@ with evidence:
 
 The result is a **timing contract** for each hop, and the evidence behind it.
 
-## One method, four ways of deploying
+## One method, five ways of deploying
 
 The same loop applies however the system is built; what changes is which
 interference channels exist, what can be observed, and which controls are
@@ -65,13 +65,21 @@ available.
 ```
                  Profile  ──►  Attribute  ──►  Control  ──►  Verify
                     │              │              │             │
+ Single OS,         ●              ●              ●             ●
+   partitioned cores
+   (e.g. Linux with real-time preemption, critical path on isolated cores)
  Bare-metal RTOS    ●              ●              ●             ●
  Virtualised        ●              ●              ●             ●
  On-chip AMP        ●              ●              ●             ●
    (e.g. Cortex-A + Cortex-R/M sharing memory and interconnect)
  Off-chip AMP       ●              ●              ●             ●
-   (discrete processor, accelerator or safety island over PCIe or another link)
+   (discrete processor or safety island over a network, PCIe or another link)
 ```
+
+Models combine — a hypervisor on the application cores with real-time cores
+outside it is virtualised plus on-chip AMP. Where each AI workload runs (CPU,
+on-chip accelerator, discrete accelerator) is declared separately from the
+deployment model, and results with different placements are never pooled.
 
 - **Profile:** measure a victim path against declared, realistic
   competing workloads ("aggressors"), hop by hop.
@@ -120,7 +128,7 @@ HopBound starts in November 2026. **It has no measurements yet.**
 |---|---|
 | Measured | Nothing yet |
 | Written | Concept, principles, specification outline (`spec/`) |
-| Planned | Campaign 01: perception chain, camera → inference → consumer (`campaigns/`) |
+| Planned | Campaign 00: the full pipeline brought up in simulation — no measurements. Campaign 01: a robot arm under a learned policy, with an AI-driven safety stop that must meet a deadline (`campaigns/`) |
 
 Disagreement with the method is welcome now, before data exists to defend it.
 

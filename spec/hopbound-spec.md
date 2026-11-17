@@ -67,14 +67,25 @@ Profile ──► Attribute ──► Control ──► Verify
    └──────────── next iteration ─────────┘
 ```
 
-**Axis 2 — the deployment model.** What the method is applied to:
+**Axis 2 — the deployment model.** Where the protected path runs, relative to
+the workloads that compete with it:
 
 | Deployment model | Example |
 |---|---|
+| D0 Single OS, partitioned cores | One operating system (e.g. Linux with real-time preemption); the protected path pinned to isolated cores beside the AI workload |
 | D1 Bare-metal RTOS | Control loop on a microcontroller or a dedicated core |
 | D2 Virtualised | Real-time guest and rich-OS guest under a hypervisor on one SoC |
 | D3 On-chip AMP | Application cores and real-time cores (e.g. Cortex-A with Cortex-R/M) sharing memory, interconnect and peripherals |
-| D4 Off-chip AMP | A discrete processor, accelerator or safety island connected over PCIe or another high-speed link |
+| D4 Off-chip AMP | A discrete processor or safety island connected over a network, PCIe or another link |
+
+Models combine: a hypervisor on the application cores with real-time cores
+outside it is D2 + D3. Each run declares its model.
+
+**Workload placement — a second declaration.** Where each competing workload
+runs — CPU, on-chip accelerator, or discrete accelerator — is declared
+separately from the deployment model. A policy moved from the CPU to a
+discrete accelerator changes the interference, not the deployment model;
+results with different placements are never pooled.
 
 The loop does not change across deployment models. What changes is which
 interference channels exist, what can be observed, how clocks relate, and
@@ -304,14 +315,14 @@ reason (for example, the platform could not observe enough to decide).
 
 Initial view, to be revised by campaigns.
 
-| | D1 Bare-metal RTOS | D2 Virtualised | D3 On-chip AMP | D4 Off-chip AMP |
-|---|---|---|---|---|
-| Typical interference channels | Software paths, cache, memory | Plus VM exits, address-translation stages, device emulation and backends | Shared memory, interconnect, coherence traffic, shared peripherals | Link bandwidth and latency, DMA, IOMMU; no shared cache |
-| Typical visibility | Inside (own code) | Inside for guests; platform or boundary for the hypervisor | Varies by core type; real-time side often inside, accelerators often boundary | Mostly boundary for the remote side |
-| Observable layers | Cycle counters, RTOS trace | Plus hypervisor traces and exit accounting | Per-core-type counters; interconnect monitors where present | Boundary timestamps, link and IOMMU counters where exposed |
-| Clock relationship | One domain | One domain; guest time can be distorted by the hypervisor | Often two domains | Separate domains |
-| Clock alignment | Not needed | Check per-guest counter offsets | Shared counter if the SoC provides one; otherwise message exchange | Message exchange or a shared hardware event |
-| Typical controls | Priority, affinity, interrupt routing | Partitioning, vCPU pinning, backend placement | Bandwidth regulation, cache partitioning, firewalls, memory placement | Link quality-of-service, IOMMU domains, admission control, monitors and fallback |
+| | D0 Single OS, partitioned cores | D1 Bare-metal RTOS | D2 Virtualised | D3 On-chip AMP | D4 Off-chip AMP |
+|---|---|---|---|---|---|
+| Typical interference channels | Scheduler and kernel locks, interrupts, shared cache and memory between cores | Software paths, cache, memory | Plus VM exits, address-translation stages, device emulation and backends | Shared memory, interconnect, coherence traffic, shared peripherals | Link bandwidth and latency, DMA, IOMMU; no shared cache |
+| Typical visibility | Inside (own code); platform for the kernel and drivers | Inside (own code) | Inside for guests; platform or boundary for the hypervisor | Varies by core type; real-time side often inside, accelerators often boundary | Mostly boundary for the remote side |
+| Observable layers | Kernel tracepoints and scheduler events, per-core counters, uncore counters where supported | Cycle counters, RTOS trace | Plus hypervisor traces and exit accounting | Per-core-type counters; interconnect monitors where present | Boundary timestamps, link and IOMMU counters where exposed |
+| Clock relationship | One domain | One domain | One domain; guest time can be distorted by the hypervisor | Often two domains | Separate domains |
+| Clock alignment | Not needed | Not needed | Check per-guest counter offsets | Shared counter if the SoC provides one; otherwise message exchange | Message exchange or a shared hardware event |
+| Typical controls | Core isolation, priority, interrupt affinity, memory-bandwidth regulation, cache partitioning where supported | Priority, affinity, interrupt routing | Partitioning, vCPU pinning, backend placement | Bandwidth regulation, cache partitioning, firewalls, memory placement | Link quality-of-service, IOMMU domains, admission control, monitors and fallback |
 
 ---
 
